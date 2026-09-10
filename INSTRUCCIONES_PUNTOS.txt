@@ -1,0 +1,97 @@
+====================================================================
+ CÓMO DESACTIVAR LA PENALIZACIÓN POR RESPUESTA INCORRECTA
+====================================================================
+
+Por defecto, si un equipo responde de forma incorrecta, se le restan 
+puntos. Si deseas cambiar este comportamiento para que NO se le descuente 
+ningún punto (se quede en 0 puntos), sigue estos 2 sencillos pasos:
+
+--------------------------------------------------------------------
+PASO 1: Modificar la lógica de puntuación
+--------------------------------------------------------------------
+Archivo: src/hooks/useJuego.ts
+
+Busca la función `resolverPregunta` (aproximadamente en la línea 50) 
+y cambia el cálculo de puntaje:
+
+CÓDIGOS ACTUALES (Resta puntos):
+--------------------------------
+puntaje: esCorrecta ? prev.puntaje + puntos : Math.max(0, prev.puntaje - puntos),
+
+CÓDIGO NUEVO (No resta puntos, mantiene el actual):
+--------------------------------------------------
+puntaje: esCorrecta ? prev.puntaje + puntos : prev.puntaje,
+
+*(Aplica esta modificación tanto para el Equipo 1 como para el Equipo 2).*
+
+
+--------------------------------------------------------------------
+PASO 2: Ajustar el mensaje en pantalla (Opcional)
+--------------------------------------------------------------------
+Archivo: src/components/ModalPregunta.tsx
+
+1. Busca el texto de advertencia (alrededor de la línea 39):
+   Cambia:
+   "Se descuentan {puntos} puntos y la casilla sigue disponible en el tablero."
+   Por:
+   "No se suman puntos y la casilla sigue disponible en el tablero."
+
+2. Busca el botón para el modo experiencia (alrededor de la línea 79):
+   Cambia:
+   "❌ Incorrecta (-{puntos})"
+   Por:
+   "❌ Incorrecta (0 pts)"
+
+====================================================================
+
+¿Qué debes cambiar?
+Abre tu archivo src/hooks/useJuego.ts y busca la función resolverPregunta.
+
+Actualmente tienes esto:
+
+TypeScript
+    if (turnoEquipo === 1) {
+      setEquipo1((prev) => ({
+        ...prev,
+        // Si es incorrecta, descuenta los puntos:
+        puntaje: esCorrecta ? prev.puntaje + puntos : Math.max(0, prev.puntaje - puntos),
+      }));
+    } else {
+      setEquipo2((prev) => ({
+        ...prev,
+        // Si es incorrecta, descuenta los puntos:
+        puntaje: esCorrecta ? prev.puntaje + puntos : Math.max(0, prev.puntaje - puntos),
+      }));
+    }
+Cámbialo para que, si es incorrecta, mantenga el puntaje previo sin restar nada (prev.puntaje):
+
+TypeScript
+    if (turnoEquipo === 1) {
+      setEquipo1((prev) => ({
+        ...prev,
+        // Si es correcta suma los puntos, si no, conserva el puntaje actual
+        puntaje: esCorrecta ? prev.puntaje + puntos : prev.puntaje,
+      }));
+    } else {
+      setEquipo2((prev) => ({
+        ...prev,
+        // Si es correcta suma los puntos, si no, conserva el puntaje actual
+        puntaje: esCorrecta ? prev.puntaje + puntos : prev.puntaje,
+      }));
+    }
+Ajuste de texto en la pantalla (Opcional)
+Para que el mensaje del modal tampoco diga "Se descuentan X puntos", abre src/components/ModalPregunta.tsx y busca esta línea en el cuadro de respuesta incorrecta:
+
+Antes:
+
+TypeScript
+<p className="text-slate-300 mt-2">Se descuentan {puntos} puntos y la casilla sigue disponible en el tablero.</p>
+Ahora:
+
+TypeScript
+<p className="text-slate-300 mt-2">No se suman puntos y la casilla sigue disponible en el tablero.</p>
+Y en el botón de modo experiencia:
+
+Cambia ❌ Incorrecta (-{puntos}) por ❌ Incorrecta (0 pts).
+
+¡Eso es todo! Con esos pequeños cambios, las respuestas fallidas no penalizarán el marcador.
